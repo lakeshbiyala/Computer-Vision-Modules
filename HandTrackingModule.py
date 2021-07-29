@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import time
+import math
 
 
 class handDetector():
@@ -31,7 +32,7 @@ class handDetector():
 
     def findPosition(self, img, handNo=0, draw=True):
 
-        lmList = []
+        self.lmList = []
         if self.results.multi_hand_landmarks:
             myHand = self.results.multi_hand_landmarks[handNo]
             for id, lm in enumerate(myHand.landmark):
@@ -40,11 +41,47 @@ class handDetector():
                 # (x, y) are ratio of the point on img
                 cx, cy = int(lm.x*w), int(lm.y*h)
                 #print(id, cx, cy)
-                lmList.append([id, cx, cy])
+                self.lmList.append([id, cx, cy])
                 if draw:
                     cv2.circle(img, (cx, cy), 15, (255, 0, 255), cv2.FILLED)
 
-        return lmList
+        return self.lmList
+
+    def fingersUp(self):
+        tipIds = [4, 8, 12, 16, 20]
+        OpenFingers = []
+        # FOR THUMB:
+        if self.lmList[tipIds[0]][1] > self.lmList[tipIds[0]-1][1]:  # lmlist[id][x][y]
+            OpenFingers.append(1)
+        else:
+            OpenFingers.append(0)
+
+        # Remaining Fingers:
+        for id in range(1, 5):
+            if self.lmList[tipIds[id]][2] < self.lmList[tipIds[id]-2][2]:  # lmlist[id][x][y]
+                OpenFingers.append(1)
+            else:
+                OpenFingers.append(0)
+        # print(OpenFingers)
+        return OpenFingers
+
+    def findDistance(self, img, p1, p2):
+        x1, y1 = self.lmList[p1][1], self.lmList[p1][2]
+        x2, y2 = self.lmList[p2][1], self.lmList[p2][2]
+        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+
+        cv2.circle(img, (x1, y1), 10, (255, 0, 255), cv2.FILLED)
+        cv2.circle(img, (x2, y2), 10, (255, 0, 255), cv2.FILLED)
+        cv2.circle(img, (cx, cy), 10, (255, 0, 255), cv2.FILLED)
+        cv2.line(img, (x1, y1), (x2, y2), (255, 0, 255), 3)
+
+        length = math.hypot(x2-x1, y2-y1)
+        # print(length)
+
+        # if length < 40:
+        #     cv2.circle(img, (cx, cy), 10, (255, 0, 0), cv2.FILLED)
+
+        return length, [x1, y1, x2, y2, cx, cy]
 
 
 def main():
