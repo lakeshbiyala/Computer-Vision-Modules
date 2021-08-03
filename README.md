@@ -1,1 +1,1 @@
-# Computer Vision Projects Google mediapipe Modules
+# Computer Vision Modules using Google mediapipe to reuse in making Projects
